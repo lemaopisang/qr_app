@@ -1,5 +1,5 @@
 name: qr_app
-description: "A new Flutter project."
+description: "QR generator and scanner with quick history and sharing"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.1
+  sdk: '>=3.10.1 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -42,6 +42,8 @@ dependencies:
   screenshot: ^3.0.0
   # Share QR code ke aplikasi lain (WA, IG, Email, dll)
   share_plus: ^12.0.1
+  flutter_native_splash: ^2.4.1
+  flutter_animate: ^4.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -72,9 +74,30 @@ flutter:
     # Jika ada file spesifik:
     # - assets/images/splash.png
 
-  # Custom font: Manrope (Regular, Medium, SemiBold, Bold)
+  # Custom font: Manrope family covers the spectrum of weights.
   fonts:
     - family: Manrope
       fonts:
-        - asset: assets/fonts/Manrope-VariableFont_wght.ttf
+        - asset: assets/fonts/Manrope-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Manrope-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Manrope-Regular.ttf
           weight: 400
+        - asset: assets/fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-ExtraBold.ttf
+          weight: 800
+
+flutter_native_splash:
+  color: "#553FB8"
+  image: assets/images/splash.png
+  android: true
+  ios: true
+  web: false
+  android_gravity: center
+  ios_content_mode: center

@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Additional Flutter defaults
+android/.gradle/
+android/local.properties
+ios/Flutter/flutter_export_environment.sh
+ios/Pods/
