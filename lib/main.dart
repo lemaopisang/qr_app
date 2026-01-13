@@ -5,6 +5,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'core/constants/app_constants.dart';
 import 'ui/home_screen.dart';
+import 'ui/history_screen.dart';
 import 'ui/qr_generator/qr_generator_screen.dart';
 import 'ui/qr_scanner_screen.dart';
 import 'ui/splash_screen.dart';
@@ -71,6 +72,7 @@ class _MainAppState extends State<MainApp> {
         '/home': (context) => const HomeScreen(),
         '/create': (context) => const QrGeneratorScreen(),
         '/scan': (context) => const QrScannerScreen(),
+        '/history': (context) => const HistoryScreen(),
       },
     );
   }

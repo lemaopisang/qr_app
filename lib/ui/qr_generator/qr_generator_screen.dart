@@ -6,10 +6,13 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
-import 'package:qr/qr.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:printing/printing.dart';
+import 'package:open_file/open_file.dart';
+import 'package:qr_app/core/constants/history_keys.dart';
+import 'package:qr_app/core/utils/qr_export.dart';
 
 const Color primaryColor = Color(0xFF3A2EC3);
 
@@ -86,9 +89,9 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
   Future<void> _saveGenerated() async {
     if (!_canSave) return;
     final prefs = await SharedPreferences.getInstance();
-    final history = prefs.getStringList(_generatorHistoryKey) ?? [];
+    final history = prefs.getStringList(generatorHistoryKey) ?? [];
     final entry = jsonEncode({
-      'value': _qrData,
+          'value': _qrData,
       'timestamp': DateTime.now().toIso8601String(),
     });
     history.insert(0, entry);
@@ -136,108 +139,175 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
 
   Future<void> _downloadVector(QrVectorFormat format) async {
     if (!_canSave) return;
-    final matrix = _buildQrMatrix(_qrData!);
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final bytes = format == QrVectorFormat.svg
-        ? Uint8List.fromList(utf8.encode(_buildSvg(matrix)))
-        : await _buildPdf(matrix);
-    final extension = format == QrVectorFormat.svg ? 'svg' : 'pdf';
-    try {
-      final directory = await getApplicationDocumentsDirectory();
+
+    Future<void> saveTask() async {
+      final matrix = buildQrMatrix(_qrData!);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final bytes = format == QrVectorFormat.svg
+          ? Uint8List.fromList(utf8.encode(buildQrSvg(matrix, _qrColor)))
+          : await buildQrPdf(matrix, _qrColor);
+      final extension = format == QrVectorFormat.svg ? 'svg' : 'pdf';
+
+      final directory = format == QrVectorFormat.pdf
+          ? (await getDownloadsDirectory() ??
+              (throw StateError('Folder Downloads tidak tersedia')))
+          : await getApplicationDocumentsDirectory();
+
       final file = File('${directory.path}/qrcode_$timestamp.$extension');
       await file.writeAsBytes(bytes);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Disimpan ke ${file.path}')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: $e')),
-      );
-    }
-  }
+      _showSnack('Disimpan ke ${file.path}');
 
-  List<List<bool>> _buildQrMatrix(String data) {
-    final qrCode = QrCode.fromData(
-      data: data,
-      errorCorrectLevel: QrErrorCorrectLevel.M,
-    );
-    final qrImage = QrImage(qrCode);
-    return List.generate(
-      qrImage.moduleCount,
-      (y) => List.generate(qrImage.moduleCount, (x) => qrImage.isDark(y, x)),
-    );
-  }
-
-  String _buildSvg(List<List<bool>> matrix) {
-    const moduleSize = 10;
-    final totalSize = matrix.length * moduleSize;
-    final buffer = StringBuffer()
-      ..writeln(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="$totalSize" height="$totalSize" viewBox="0 0 $totalSize $totalSize">',
-      )
-      ..writeln(
-        '<rect width="$totalSize" height="$totalSize" fill="${_colorToHex(_qrColor)}"/>',
-      );
-
-    for (var y = 0; y < matrix.length; y++) {
-      for (var x = 0; x < matrix.length; x++) {
-        if (!matrix[y][x]) continue;
-        final left = x * moduleSize;
-        final top = y * moduleSize;
-        buffer.writeln(
-          '<rect x="$left" y="$top" width="$moduleSize" height="$moduleSize" fill="#000"/>',
-        );
+      if (format == QrVectorFormat.pdf) {
+        final result = await OpenFile.open(file.path);
+        if (result.type != ResultType.done) {
+          _showSnack('Gagal membuka file: ${result.message}');
+        }
       }
     }
 
-    buffer.writeln('</svg>');
-    return buffer.toString();
+    try {
+      if (format == QrVectorFormat.pdf) {
+        await _showLoadingWhile(saveTask);
+      } else {
+        await saveTask();
+      }
+    } catch (e) {
+      _showSnack('Gagal menyimpan: $e');
+    }
   }
 
-  Future<Uint8List> _buildPdf(List<List<bool>> matrix) async {
-    final doc = pw.Document();
-    const double moduleSize = 8;
-    final double qrSize = matrix.length * moduleSize;
+  Future<void> _saveAndPrint() async {
+    if (!_canSave) return;
+    final format = await _showSavePrintDialog();
+    if (format == null) return;
+    await _downloadVector(format);
+    await _printQrDocument();
+  }
 
-    doc.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.all(32),
-        build: (context) {
-          return pw.Center(
-            child: pw.Container(
-              width: qrSize,
-              height: qrSize,
-              color: PdfColors.white,
-              child: pw.Column(
-                mainAxisSize: pw.MainAxisSize.min,
-                children: matrix.map((row) {
-                  return pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: row.map((cell) {
-                      return pw.Container(
-                        width: moduleSize,
-                        height: moduleSize,
-                        color: cell ? PdfColors.black : PdfColors.white,
-                      );
-                    }).toList(),
-                  );
-                }).toList(),
-              ),
+  Future<QrVectorFormat?> _showSavePrintDialog() async {
+    QrVectorFormat selection = QrVectorFormat.svg;
+    return showDialog<QrVectorFormat>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Type of File?'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return DropdownButtonFormField<QrVectorFormat>(
+                value: selection,
+                decoration: const InputDecoration(
+                  labelText: 'Pilih format',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: QrVectorFormat.svg,
+                    child: Text('SVG'),
+                  ),
+                  DropdownMenuItem(
+                    value: QrVectorFormat.pdf,
+                    child: Text('PDF'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => selection = value);
+                  }
+                },
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
             ),
-          );
-        },
-      ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(selection),
+              child: const Text('Print'),
+            ),
+          ],
+        );
+      },
     );
-
-    return doc.save();
   }
 
-  String _colorToHex(Color color) {
-    final rgb = color.value.toRadixString(16).padLeft(8, '0');
-    return '#${rgb.substring(2)}';
+  Future<void> _printQrDocument() async {
+    await _showLoadingWhile(() async {
+      final imageBytes = await _captureQrSnapshot(pixelRatio: 3.0);
+      if (imageBytes == null) {
+        _showSnack('Gagal menangkap QR untuk mencetak.');
+        return;
+      }
+      try {
+        final pdf = pw.Document();
+        final qrImage = pw.MemoryImage(imageBytes);
+        pdf.addPage(
+          pw.Page(
+            build: (pw.Context context) {
+              return pw.Center(
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: [
+                    pw.Text(
+                      'QR Code Generated',
+                      style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.SizedBox(height: 16),
+                    pw.Image(qrImage, width: 200, height: 200),
+                    pw.SizedBox(height: 16),
+                    pw.Text(
+                      'Link/Teks: ${_qrData ?? '-'}',
+                      style: pw.TextStyle(fontSize: 14),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      'Dibuat oleh: QR S&G App',
+                      style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+        await Printing.layoutPdf(
+          onLayout: (format) async => pdf.save(),
+          name: 'QR_Code_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
+      } catch (e) {
+        _showSnack('Gagal print: $e');
+      }
+    });
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<T> _showLoadingWhile<T>(Future<T> Function() task) async {
+    if (!mounted) return task();
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      return await task();
+    } finally {
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+  }
+
+  Future<Uint8List?> _captureQrSnapshot({double pixelRatio = 2.0}) async {
+    return await _screenshotController.capture(pixelRatio: pixelRatio);
   }
 
   @override
@@ -465,6 +535,15 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _canSave ? _saveAndPrint : null,
+                            style: downloadButtonStyle,
+                            child: const Text('Save & Print'),
+                          ),
                         ),
                       ],
                     ),
