@@ -1,7 +1,13 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const String _scanHistoryKey = 'scan_history';
 
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
@@ -19,12 +25,14 @@ class _QrScannerScreenState extends State<QrScannerScreen>
   );
 
   bool _torchOn = false;
+  List<Map<String, dynamic>> _scanHistory = [];
   String? _barcodeValue;
   bool _guideShown = false;
 
   @override
   void initState() {
     super.initState();
+    _loadHistory();
     _requestCameraPermission();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -51,6 +59,33 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     } else if (result.isPermanentlyDenied) {
       openAppSettings();
     }
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_scanHistoryKey) ?? [];
+    final decoded = raw
+        .map((entry) => jsonDecode(entry) as Map<String, dynamic>)
+        .toList();
+    setState(() => _scanHistory = decoded);
+  }
+
+  Future<void> _saveHistory(String value) async {
+    final entry = {
+      'value': value,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    setState(() {
+      _scanHistory.insert(0, entry);
+      if (_scanHistory.length > 5) {
+        _scanHistory.removeRange(5, _scanHistory.length);
+      }
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _scanHistoryKey,
+      _scanHistory.map(jsonEncode).toList(),
+    );
   }
 
   @override
@@ -81,6 +116,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
     _controller.stop();
     setState(() => _barcodeValue = rawValue);
+    _saveHistory(rawValue);
 
     showDialog(
       context: context,
@@ -151,6 +187,58 @@ class _QrScannerScreenState extends State<QrScannerScreen>
               painter: ScannerOverlayPainter(),
             ),
           ),
+          if (_scanHistory.isNotEmpty)
+            Positioned(
+              top: 100,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white70,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.black12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Riwayat Scan Terbaru',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    ..._scanHistory.take(3).map((entry) {
+                      final timestamp = entry['timestamp'] as String?;
+                      final parsed = timestamp != null
+                          ? DateTime.tryParse(timestamp)?.toLocal()
+                          : null;
+                      final formattedTime = parsed != null
+                          ? '${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}'
+                          : 'waktu tidak tersedia';
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                entry['value'] as String? ?? '-',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              formattedTime,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ),
           Positioned(
             top: 16,
             right: 16,

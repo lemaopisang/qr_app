@@ -36,6 +36,8 @@ dependencies:
   mobile_scanner: ^7.1.4      # Versi stabil terbaru
   # Permission handler untuk minta akses kamera, storage, dll
   permission_handler: ^12.0.1
+  shared_preferences: ^2.2.0
+  path_provider: ^2.0.15
   # Generator QR Code cantik & customizable
   pretty_qr_code: ^3.5.0
   # Ambil screenshot widget (untuk save/share QR)

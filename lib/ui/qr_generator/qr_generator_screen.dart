@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:qr/qr.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const Color primaryColor = Color(0xFF3A2EC3);
 
@@ -22,6 +25,7 @@ const List<Color> qrColors = [
 
 const String _logoAsset = 'assets/images/scan-icon.png';
 const int _maxInputLength = 280;
+const String _generatorHistoryKey = 'generator_history';
 
 enum QrVectorFormat { svg, pdf }
 
@@ -43,6 +47,8 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
 
   bool get _canShare =>
       _qrData != null && _qrData!.isNotEmpty && _inputError == null;
+
+  bool get _canSave => _qrData != null && _qrData!.isNotEmpty;
 
   Future<void> _shareQr() async {
     if (!_canShare) return;
@@ -77,6 +83,26 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
     });
   }
 
+  Future<void> _saveGenerated() async {
+    if (!_canSave) return;
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList(_generatorHistoryKey) ?? [];
+    final entry = jsonEncode({
+      'value': _qrData,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    history.insert(0, entry);
+    if (history.length > 20) {
+      history.removeRange(20, history.length);
+    }
+    await prefs.setStringList(_generatorHistoryKey, history);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('QR tersimpan ke riwayat.')));
+    Navigator.pop(context);
+  }
+
   void _handleInput(String value) {
     final trimmed = value.trim();
     final error = _validateInput(trimmed);
@@ -108,29 +134,28 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
         value.contains('.');
   }
 
-  Future<void> _exportVector(QrVectorFormat format) async {
-    if (!_canShare) return;
+  Future<void> _downloadVector(QrVectorFormat format) async {
+    if (!_canSave) return;
     final matrix = _buildQrMatrix(_qrData!);
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    Uint8List bytes;
-    String name;
-    String mime;
-    if (format == QrVectorFormat.svg) {
-      final svg = _buildSvg(matrix);
-      bytes = Uint8List.fromList(utf8.encode(svg));
-      name = 'qrcode_$timestamp.svg';
-      mime = 'image/svg+xml';
-    } else {
-      bytes = await _buildPdf(matrix);
-      name = 'qrcode_$timestamp.pdf';
-      mime = 'application/pdf';
+    final bytes = format == QrVectorFormat.svg
+        ? Uint8List.fromList(utf8.encode(_buildSvg(matrix)))
+        : await _buildPdf(matrix);
+    final extension = format == QrVectorFormat.svg ? 'svg' : 'pdf';
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/qrcode_$timestamp.$extension');
+      await file.writeAsBytes(bytes);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Disimpan ke ${file.path}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan: $e')),
+      );
     }
-
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile.fromData(bytes, name: name, mimeType: mime)],
-      ),
-    );
   }
 
   List<List<bool>> _buildQrMatrix(String data) {
@@ -217,6 +242,32 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final saveButtonStyle = ButtonStyle(
+      backgroundColor: MaterialStateProperty.resolveWith((states) {
+        return states.contains(MaterialState.disabled)
+            ? Colors.grey.shade300
+            : const Color(0xFF80EF80);
+      }),
+      foregroundColor: MaterialStateProperty.resolveWith((states) {
+        return states.contains(MaterialState.disabled)
+            ? Colors.black
+            : Colors.white;
+      }),
+    );
+
+    final downloadButtonStyle = ButtonStyle(
+      backgroundColor: MaterialStateProperty.resolveWith((states) {
+        return states.contains(MaterialState.disabled)
+            ? Colors.grey.shade300
+            : const Color(0xFF00EEEE);
+      }),
+      foregroundColor: MaterialStateProperty.resolveWith((states) {
+        return states.contains(MaterialState.disabled)
+            ? Colors.black
+            : Colors.white;
+      }),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create QR', style: TextStyle(color: Colors.white)),
@@ -226,6 +277,12 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined, color: Colors.white),
+            onPressed: _canShare ? _shareQr : null,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -377,13 +434,10 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: _canShare ? _shareQr : null,
-                                icon: const Icon(Icons.share),
-                                label: const Text('Share QR'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                ),
+                              child: ElevatedButton(
+                                onPressed: _canSave ? _saveGenerated : null,
+                                style: saveButtonStyle,
+                                child: const Text('Save'),
                               ),
                             ),
                           ],
@@ -393,25 +447,21 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: _canShare
-                                    ? () => _exportVector(QrVectorFormat.svg)
+                                onPressed: _canSave
+                                    ? () => _downloadVector(QrVectorFormat.svg)
                                     : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.teal,
-                                ),
-                                child: const Text('Export SVG'),
+                                style: downloadButtonStyle,
+                                child: const Text('Download SVG'),
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: _canShare
-                                    ? () => _exportVector(QrVectorFormat.pdf)
+                                onPressed: _canSave
+                                    ? () => _downloadVector(QrVectorFormat.pdf)
                                     : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.indigo,
-                                ),
-                                child: const Text('Export PDF'),
+                                style: downloadButtonStyle,
+                                child: const Text('Download PDF'),
                               ),
                             ),
                           ],
