@@ -6,7 +6,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'core/constants/app_constants.dart';
 import 'ui/home_screen.dart';
 import 'ui/qr_generator/qr_generator_screen.dart';
-import 'ui/qr_scanner/qr_scanner_screen.dart';
+import 'ui/qr_scanner_screen.dart';
 import 'ui/splash_screen.dart';
 
 void main() {
