@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 const double kDefaultPadding = 20.0;
 const double kGridSpacing = 16.0;
+const double kMenuButtonHeight = 190.0;
 
 class User {
   const User({
@@ -16,7 +17,6 @@ class User {
   final String profileImagePath;
 }
 
-
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -25,30 +25,6 @@ class HomeScreen extends StatelessWidget {
     role: 'Fullstack Developer',
     profileImagePath: 'assets/images/profile.png',
   );
-
-  static const List<_MenuItem> _menuItems = [
-    _MenuItem(
-      icon: Icons.qr_code_2,
-      label: 'Create',
-      color: Colors.blueAccent,
-      route: '/create',
-      delay: Duration(milliseconds: 50),
-    ),
-    _MenuItem(
-      icon: Icons.qr_code_scanner,
-      label: 'Scan',
-      color: Colors.redAccent,
-      route: '/scan',
-      delay: Duration(milliseconds: 150),
-    ),
-    _MenuItem(
-      icon: Icons.history,
-      label: 'History',
-      color: Colors.greenAccent,
-      route: '/history',
-      delay: Duration(milliseconds: 250),
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -64,50 +40,84 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const UserProfileHeader(user: _currentUser),
-            const SizedBox(height: 24),
-            const Text(
-              'Welcome to',
-              style: TextStyle(fontSize: 20, color: Colors.grey),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = constraints.maxWidth >= 900
+              ? 4
+              : constraints.maxWidth >= 640
+                  ? 3
+                  : 2;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const UserProfileHeader(user: _currentUser),
+                const SizedBox(height: 24),
+                const Text(
+                  'Welcome to',
+                  style: TextStyle(fontSize: 20, color: Colors.grey),
+                ),
+                const Text(
+                  'QR S&G',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MenuButton(
+                              icon: Icons.qr_code_2,
+                              label: 'Create',
+                              color: Colors.blueAccent,
+                              route: '/create',
+                              delay: const Duration(milliseconds: 50),
+                              height: kMenuButtonHeight,
+                            ),
+                          ),
+                          const SizedBox(width: kGridSpacing),
+                          Expanded(
+                            child: _MenuButton(
+                              icon: Icons.qr_code_scanner,
+                              label: 'Scan',
+                              color: Colors.redAccent,
+                              route: '/scan',
+                              delay: const Duration(milliseconds: 150),
+                              height: kMenuButtonHeight,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: kGridSpacing * 1.5),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _MenuButton(
+                          icon: Icons.history,
+                          label: 'History',
+                          color: Colors.greenAccent,
+                          route: '/history',
+                          delay: const Duration(milliseconds: 250),
+                          width: double.infinity,
+                          height: kMenuButtonHeight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const Text(
-              'QR S&G',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: _buildMenuRows(),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
-  }
-
-  List<Widget> _buildMenuRows() {
-    final rows = <Widget>[];
-    for (var i = 0; i < _menuItems.length; i += 2) {
-      final chunk = _menuItems.sublist(i, i + 2 <= _menuItems.length ? i + 2 : _menuItems.length);
-      rows.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: kGridSpacing / 2),
-          child: _MenuRow(items: chunk),
-        ),
-      );
-    }
-    return rows;
   }
 
 }
@@ -151,54 +161,6 @@ class UserProfileHeader extends StatelessWidget {
   }
 }
 
-class _MenuRow extends StatelessWidget {
-  const _MenuRow({required this.items});
-
-  final List<_MenuItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    final isSingle = items.length == 1;
-    final children = <Widget>[];
-    for (var i = 0; i < items.length; i++) {
-      if (i > 0 && !isSingle) {
-        children.add(const SizedBox(width: kGridSpacing));
-      }
-      final button = _MenuButton(
-        icon: items[i].icon,
-        label: items[i].label,
-        color: items[i].color,
-        route: items[i].route,
-        delay: items[i].delay,
-      );
-      children.add(isSingle
-          ? SizedBox(width: 240, child: button)
-          : Expanded(child: button));
-    }
-
-    return Row(
-      mainAxisAlignment: isSingle ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
-      children: children,
-    );
-  }
-}
-
-class _MenuItem {
-  const _MenuItem({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.route = '',
-    this.delay = Duration.zero,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final String route;
-  final Duration delay;
-}
-
 class _MenuButton extends StatelessWidget {
   const _MenuButton({
     required this.icon,
@@ -207,6 +169,8 @@ class _MenuButton extends StatelessWidget {
     this.route = '',
     this.onTap,
     this.delay = Duration.zero,
+    this.width,
+    this.height,
   });
 
   final IconData icon;
@@ -215,6 +179,8 @@ class _MenuButton extends StatelessWidget {
   final String route;
   final VoidCallback? onTap;
   final Duration delay;
+  final double? width;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +197,10 @@ class _MenuButton extends StatelessWidget {
       ],
       child: GestureDetector(
         onTap: onTap ?? (route.isNotEmpty ? () => Navigator.pushNamed(context, route) : null),
-        child: Container(
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Container(
           decoration: BoxDecoration(
             color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(24),
@@ -270,6 +239,7 @@ class _MenuButton extends StatelessWidget {
           ),
         ),
       ),
+      )
     );
   }
 }
