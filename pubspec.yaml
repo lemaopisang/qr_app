@@ -44,6 +44,7 @@ dependencies:
   screenshot: ^3.0.0
   # Share QR code ke aplikasi lain (WA, IG, Email, dll)
   share_plus: ^12.0.1
+  image: ^4.0.17
   printing: ^5.14.2
   open_file: ^3.2.1
   flutter_native_splash: ^2.4.1

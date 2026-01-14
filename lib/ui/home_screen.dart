@@ -41,13 +41,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossAxisCount = constraints.maxWidth >= 900
-              ? 4
-              : constraints.maxWidth >= 640
-                  ? 3
-                  : 2;
-
+        builder: (context, _) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding),
             child: Column(
@@ -167,7 +161,6 @@ class _MenuButton extends StatelessWidget {
     required this.label,
     required this.color,
     this.route = '',
-    this.onTap,
     this.delay = Duration.zero,
     this.width,
     this.height,
@@ -177,7 +170,6 @@ class _MenuButton extends StatelessWidget {
   final String label;
   final Color color;
   final String route;
-  final VoidCallback? onTap;
   final Duration delay;
   final double? width;
   final double? height;
@@ -196,7 +188,7 @@ class _MenuButton extends StatelessWidget {
         MoveEffect(begin: const Offset(0, 20), end: Offset.zero, delay: delay),
       ],
       child: GestureDetector(
-        onTap: onTap ?? (route.isNotEmpty ? () => Navigator.pushNamed(context, route) : null),
+        onTap: route.isNotEmpty ? () => Navigator.pushNamed(context, route) : null,
         child: SizedBox(
           width: width,
           height: height,
