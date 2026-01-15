@@ -61,7 +61,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (file == null || !await file.exists()) {
       final bytes = entry.imageBytes;
       if (bytes == null) {
-        _showSnack('QR tidak ditemukan :(');
+        _showSnack('QR not found :(');
         return;
       }
       file = await _writeShareTempFile(bytes, entry.label, entry.format);
@@ -75,7 +75,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
       );
     } catch (error) {
-      _showSnack('Gagal berbagi: $error');
+      _showSnack('Failed to share: $error');
     }
   }
 
@@ -114,8 +114,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: Text(title),
         content: Text(description),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
-          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Lanjutkan')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Continue')),
         ],
       ),
     );
@@ -170,7 +170,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat QR'),
+        title: const Text('QR History'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -189,7 +189,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           FilledButton.icon(
                             onPressed: _currentPage > 0
@@ -198,9 +197,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     })
                                 : null,
                             icon: const Icon(Icons.chevron_left),
-                            label: const Text('Sebelumnya'),
+                            label: const Text('Previous'),
                           ),
-                          Text('Halaman ${_currentPage + 1} dari $_totalPages'),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Center(
+                                child: Text(
+                                'Page ${_currentPage + 1} of $_totalPages',
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           FilledButton.icon(
                             onPressed: _currentPage < _totalPages - 1
                                 ? () => setState(() {
@@ -208,7 +217,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     })
                                 : null,
                             icon: const Icon(Icons.chevron_right),
-                            label: const Text('Berikutnya'),
+                            label: const Text('Next'),
                           ),
                         ],
                       ),
@@ -218,11 +227,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           if (_entries.isEmpty) return;
-          final confirmed = await _confirmAction('Hapus seluruh riwayat?', 'Tidak bisa dikembalikan.');
+          final confirmed = await _confirmAction('Clear all history?', 'This cannot be undone.');
           if (confirmed != true) return;
           setState(() => _entries.clear());
           await _saveHistory();
-          _showSnack('Riwayat dibersihkan.');
+          _showSnack('History cleared.');
           _ensurePageWithinBounds();
         },
         child: const Icon(Icons.delete_forever),
@@ -242,7 +251,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 6),
           Row(
             children: [
-              Text(entry.timestamp.toLocal().toString()),
+              Expanded(
+                child: Text(
+                  entry.timestamp.toLocal().toString(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               const SizedBox(width: 12),
               Chip(
                 label: Text(entry.format.label),
@@ -262,14 +277,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
-              final confirmed = await _confirmAction('Hapus entry?', 'Tidak bisa dikembalikan.');
+              final confirmed = await _confirmAction('Delete entry?', 'This cannot be undone.');
               if (confirmed != true) return;
               setState(() {
                 _entries.remove(entry);
                 _ensurePageWithinBounds();
               });
               await _saveHistory();
-              _showSnack('Entry dihapus.');
+              _showSnack('Entry deleted.');
             },
           ),
         ],
