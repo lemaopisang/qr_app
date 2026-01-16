@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:qr_app/core/constants/app_constants.dart';
+import 'package:qr_app/core/constants/app_colors.dart';
 
 const double kDefaultPadding = 20.0;
 const double kGridSpacing = 16.0;
@@ -30,9 +32,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR S&G'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: Text(AppConstants.appName),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -51,11 +51,11 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 const Text(
                   'Welcome to',
-                  style: TextStyle(fontSize: 20, color: Colors.grey),
+                  style: TextStyle(fontSize: 20, color: AppColors.textSecondary),
                 ),
-                const Text(
-                  'QR S&G',
-                  style: TextStyle(
+                Text(
+                  AppConstants.appName,
+                  style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
@@ -71,7 +71,7 @@ class HomeScreen extends StatelessWidget {
                             child: _MenuButton(
                               icon: Icons.qr_code_2,
                               label: 'Create',
-                              color: Colors.blueAccent,
+                              gradient: AppColors.createGradient,
                               route: '/create',
                               delay: const Duration(milliseconds: 50),
                               height: kMenuButtonHeight,
@@ -82,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                             child: _MenuButton(
                               icon: Icons.qr_code_scanner,
                               label: 'Scan',
-                              color: Colors.redAccent,
+                              gradient: AppColors.scanGradient,
                               route: '/scan',
                               delay: const Duration(milliseconds: 150),
                               height: kMenuButtonHeight,
@@ -96,7 +96,7 @@ class HomeScreen extends StatelessWidget {
                         child: _MenuButton(
                           icon: Icons.history,
                           label: 'History',
-                          color: Colors.greenAccent,
+                          gradient: AppColors.historyGradient,
                           route: '/history',
                           delay: const Duration(milliseconds: 250),
                           width: double.infinity,
@@ -142,9 +142,9 @@ class UserProfileHeader extends StatelessWidget {
             ),
             Text(
               user.role,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.grey[700],
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -159,7 +159,7 @@ class _MenuButton extends StatelessWidget {
   const _MenuButton({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.gradient,
     this.route = '',
     this.delay = Duration.zero,
     this.width,
@@ -168,7 +168,7 @@ class _MenuButton extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final Color color;
+  final LinearGradient gradient;
   final String route;
   final Duration delay;
   final double? width;
@@ -194,15 +194,9 @@ class _MenuButton extends StatelessWidget {
           height: height,
           child: Container(
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            gradient: gradient,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: AppColors.cardShadow,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -210,7 +204,7 @@ class _MenuButton extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: color,
+                  color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -225,6 +219,7 @@ class _MenuButton extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
             ],

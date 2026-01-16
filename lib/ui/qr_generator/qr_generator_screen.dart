@@ -11,12 +11,12 @@ import 'package:screenshot/screenshot.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:printing/printing.dart';
 import 'package:open_file/open_file.dart';
+import 'package:qr_app/core/constants/app_constants.dart';
 import 'package:qr_app/core/constants/history_keys.dart';
+import 'package:qr_app/core/constants/app_colors.dart';
 import 'package:qr_app/core/utils/qr_export.dart';
 import 'package:qr_app/core/utils/web_download.dart';
 import 'package:qr_app/models/qr_history_entry.dart';
-
-const Color primaryColor = Color(0xFF3A2EC3);
 
 const List<Color> qrColors = [
   Colors.white,
@@ -134,7 +134,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                     ),
                     pw.SizedBox(height: 8),
                     pw.Text(
-                      'Created by: QR S&G App',
+                      'Created by: ${AppConstants.appName} App',
                       style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
                     ),
                   ],
@@ -375,12 +375,15 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
       backgroundColor: MaterialStateProperty.resolveWith((states) {
         return states.contains(MaterialState.disabled)
             ? Colors.grey.shade300
-            : const Color(0xFF80EF80);
+            : AppColors.accentCyan;
       }),
       foregroundColor: MaterialStateProperty.resolveWith((states) {
         return states.contains(MaterialState.disabled)
-            ? Colors.black
+            ? AppColors.textSecondary
             : Colors.white;
+      }),
+      elevation: MaterialStateProperty.resolveWith((states) {
+        return states.contains(MaterialState.disabled) ? 0 : 2;
       }),
     );
 
@@ -388,22 +391,23 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
       backgroundColor: MaterialStateProperty.resolveWith((states) {
         return states.contains(MaterialState.disabled)
             ? Colors.grey.shade300
-            : const Color(0xFF00EEEE);
+            : AppColors.primaryBlue;
       }),
       foregroundColor: MaterialStateProperty.resolveWith((states) {
         return states.contains(MaterialState.disabled)
-            ? Colors.black
+            ? AppColors.textSecondary
             : Colors.white;
+      }),
+      elevation: MaterialStateProperty.resolveWith((states) {
+        return states.contains(MaterialState.disabled) ? 0 : 2;
       }),
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create QR', style: TextStyle(color: Colors.white)),
-        backgroundColor: primaryColor,
-        elevation: 0,
+        title: const Text('Create QR'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -411,8 +415,8 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
         children: [
           Column(
             children: [
-              Container(height: 220, color: primaryColor),
-              Expanded(child: Container(color: Colors.grey.shade50)),
+              Container(height: 220, color: AppColors.primaryBlue),
+              Expanded(child: Container(color: AppColors.scaffoldBackground)),
             ],
           ),
           SafeArea(
@@ -425,13 +429,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+                      boxShadow: AppColors.cardShadow,
                     ),
                     child: Column(
                       children: [
@@ -582,7 +580,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                               onSelected: (_) {
                                 setState(() => _selectedFormat = format);
                               },
-                              selectedColor: primaryColor,
+                              selectedColor: AppColors.accentCyan,
                               backgroundColor: Colors.grey.shade200,
                               labelStyle: TextStyle(
                                 color: isSelected ? Colors.white : Colors.black87,
@@ -598,7 +596,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                               child: OutlinedButton(
                                 onPressed: _resetFields,
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
+                                  foregroundColor: AppColors.error,
                                 ),
                                 child: const Text('Reset'),
                               ),

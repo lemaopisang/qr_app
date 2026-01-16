@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:qr_app/core/constants/app_colors.dart';
+import 'package:qr_app/core/constants/app_constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,38 +32,42 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF553FB8),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/splash.png',
-              width: 180,
-              height: 180,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'QRODE',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'Manrope',
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2.0,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.primaryGradient,
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/splash.png',
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'QR Generator & Scanner',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 24),
+                Text(
+                  AppConstants.appName,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Manrope',
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+                Text(
+                  '${AppConstants.appName} Generator & Scanner',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

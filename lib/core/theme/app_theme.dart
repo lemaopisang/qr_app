@@ -8,13 +8,12 @@ class AppTheme {
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.accent,
-          background: AppColors.background,
+          seedColor: AppColors.primaryBlue,
+          primary: AppColors.primaryBlue,
+          secondary: AppColors.accentCyan,
         ),
-        scaffoldBackgroundColor: AppColors.background,
-        cardColor: AppColors.surface,
+        scaffoldBackgroundColor: AppColors.scaffoldBackground,
+        cardColor: AppColors.cardBackground,
         textTheme: const TextTheme(
           headlineSmall: TextStyle(
             fontSize: 24,
@@ -28,7 +27,7 @@ class AppTheme {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.primaryBlue,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

@@ -4,11 +4,14 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
+import 'package:qr_app/core/constants/app_constants.dart';
 import 'package:qr_app/core/constants/history_keys.dart';
+import 'package:qr_app/core/constants/app_colors.dart';
 import 'package:qr_app/core/utils/qr_export.dart';
 import 'package:qr_app/models/qr_history_entry.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'history_detail_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -71,7 +74,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: entry.label.isNotEmpty ? entry.label : 'QR S&G',
+          text: entry.label.isNotEmpty ? entry.label : AppConstants.appName,
         ),
       );
     } catch (error) {
@@ -166,6 +169,58 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return (_entries.length / _pageSize).ceil();
   }
 
+  Widget _buildShimmerLoading() {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      itemCount: 5,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) => Shimmer.fromColors(
+        baseColor: Colors.grey.shade300,
+        highlightColor: Colors.grey.shade100,
+        child: ListTile(
+          leading: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          title: Container(
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                height: 14,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                height: 14,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,7 +228,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: const Text('QR History'),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildShimmerLoading()
           : _entries.isEmpty
               ? const Center(child: Text('History is empty. Create a new QR first.'))
               : Column(
@@ -261,7 +316,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               const SizedBox(width: 12),
               Chip(
                 label: Text(entry.format.label),
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: AppColors.lightBlue,
               ),
             ],
           ),
@@ -272,10 +327,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () => _shareEntry(entry)),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            color: AppColors.info,
+            onPressed: () => _shareEntry(entry),
+          ),
           IconButton(icon: const Icon(Icons.print), onPressed: () => _printEntry(entry)),
           IconButton(
             icon: const Icon(Icons.delete_outline),
+            color: AppColors.error,
             onPressed: () async {
               final confirmed = await _confirmAction('Delete entry?', 'This cannot be undone.');
               if (confirmed != true) return;
@@ -331,7 +391,7 @@ class _HistoryTileThumbnail extends StatelessWidget {
     }
     return CircleAvatar(
       radius: 28,
-      backgroundColor: Colors.grey.shade200,
+      backgroundColor: AppColors.lightBlue,
       child: Text(entry.format.label, style: Theme.of(context).textTheme.bodySmall),
     );
   }

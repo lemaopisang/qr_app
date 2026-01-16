@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppConstants {
   AppConstants._();
 
-  static const appName = 'QR Generator & Scanner';
+  static const appName = 'TheQR';
   static const defaultPadding = 16.0;
   static const defaultBorderRadius = 12.0;
   static const shadows = [

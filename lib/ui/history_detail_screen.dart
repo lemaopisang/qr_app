@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:printing/printing.dart';
+import 'package:qr_app/core/constants/app_constants.dart';
 import 'package:qr_app/core/utils/qr_export.dart';
 import 'package:qr_app/models/qr_history_entry.dart';
 import 'package:share_plus/share_plus.dart';
@@ -28,7 +29,7 @@ class _HistoryDetailScreenState extends State<HistoryDetailScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: widget.entry.label.isNotEmpty ? widget.entry.label : 'QR S&G',
+          text: widget.entry.label.isNotEmpty ? widget.entry.label : AppConstants.appName,
         ),
       );
     } catch (error) {

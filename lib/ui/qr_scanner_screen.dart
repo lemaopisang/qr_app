@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qr_app/core/constants/app_colors.dart';
 
 const String _scanHistoryKey = 'scan_history';
 
@@ -169,8 +170,6 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan QR Code'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -244,9 +243,9 @@ class _QrScannerScreenState extends State<QrScannerScreen>
             right: 16,
             child: FloatingActionButton.small(
               heroTag: 'flash_toggle',
-              backgroundColor: Colors.black45,
+              backgroundColor: AppColors.primaryBlue.withOpacity(0.8),
               onPressed: _toggleFlash,
-              child: Icon(_torchOn ? Icons.flash_off : Icons.flash_on),
+              child: Icon(_torchOn ? Icons.flash_off : Icons.flash_on, color: Colors.white),
             ),
           ),
           const Positioned(
@@ -275,7 +274,7 @@ class ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = AppColors.accentCyan
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5.0;
 
